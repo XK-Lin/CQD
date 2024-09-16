@@ -1,0 +1,15 @@
+name = "BECQDBase"
+uuid = "3f3a443b-8d19-49d9-bfc9-b71921fe2a0a"
+authors = ["Xukun Lin "]
+version = "0.1.0"
+
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
