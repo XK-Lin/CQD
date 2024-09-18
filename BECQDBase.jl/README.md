@@ -1,6 +1,6 @@
 # BECQDBase.jl
 
-**BECQDBase.jl** is a Julia module designed for simulating CQD (Cold Quantum Dot) systems using Bloch equations. It defines key structures and functions required for running experiments and simulations in this context.
+**BECQDBase.jl** is a Julia module designed for simulating CQD systems using Bloch equations. It defines key structures and functions required for running experiments and simulations in this context.
 
 ## Author
 **Xukun Lin**

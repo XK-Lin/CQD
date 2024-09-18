@@ -15,7 +15,7 @@ using Pkg, Dates, LinearAlgebra, Statistics, Logging, StatsBase, DifferentialEqu
 
 export μ₀, γₑ, γₙ
 export Experiment, Simulation, Result
-export sample_atom_once, sample_atoms, is_flipped, get_magnetic_fields, simulate, save_results
+export sample_atom_once, sample_atoms, get_magnetic_fields, simulate, save_results
 
 const μ₀ = 4π * 1e-7
 const γₑ = -1.76085963e11
