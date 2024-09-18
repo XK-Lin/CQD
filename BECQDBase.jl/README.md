@@ -75,12 +75,12 @@ save_results(experiment, simulation, result, start_time, "results_directory")
 
 ## Predefined Experiments
 `BECQDBase.jl` comes with several predefined experiments. These can be accessed by passing the appropriate experiment name to the Experiment constructor:
-- "04.06.2024 Alex"
-- "04.18.2024 Alex"
-- "04.23.2024 Alex"
-- "08.21.2024 Alex"
-- "FS Low $z_a$"
-- "FS High $z_a$"
+- `"04.06.2024 Alex"`
+- `"04.18.2024 Alex"`
+- `"04.23.2024 Alex"`
+- `"08.21.2024 Alex"`
+- `"FS Low $z_a$"`
+- `"FS High $z_a$"`
 
 ## Acknowledgement
 Many parts of the code are modified based on Kelvin's code.
