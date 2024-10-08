@@ -3,7 +3,7 @@ CQDBase.jl
 
 This module defines important structures and functions for CQD simulations. These can be used for different approaches, including the original CQD simulation with BE, or the Wigner d Majorana simulation with BE.
 Author: Xukun Lin
-Update: 10/06/2024
+Update: 10/07/2024
 
 Required packages: "Pkg", "LinearAlgebra", "Dates", "Statistics", "Logging", "StatsBase", "DifferentialEquations", "ODEInterfaceDiffEq", "Plots", "DataStructures", "DataFrames", "CSV", "LaTeXStrings", "JSON3", "Rotations", "WignerD".
 Required constants: μ₀, γₑ, γₙ, δθ.
@@ -31,32 +31,32 @@ An `Experiment` represents the experiment to simulate.
 
 # Fields
 - `name::String`: The name of the experiment. Predefined experiment names are `"FS Low \$z_a\$"`, and `"FS High \$z_a\$"`, `"Alex 165"`, `"Alex 156"`, `"Alex 396"`, `"Alex 105"`. For predefined experiments, use `Experiment(name)`.
-- `currents::Vector{Float64}`: The wire currents.
-- `flip_probabilities::Vector{Float64}`: The (mean) flip probabilities from the experiment.
-- `flip_probabilities_stds::Vector{Float64}`: The standard deviations of the flip probabilities.
-- `qm_flip_probabilities`::Vector{Float64}: The flip probabilities according to QM simulation.
-- `zₐ::Float64`: The distance from the beam to the null point.
-- `v::Float64`: The velocity of the atomic beam.
-- `Bᵣ::Vector{Float64}`: The remnant field.
-- `system_length::Float64`: The length of the system.
-- `time_span::Tuple{Float64, Float64}`: The flight time range for the atoms.
+- `currents::Vector{<:Real}`: The wire currents.
+- `flip_probabilities::Vector{<:Real}`: The (mean) flip probabilities from the experiment.
+- `flip_probabilities_stds::Vector{<:Real}`: The standard deviations of the flip probabilities.
+- `qm_flip_probabilities`::Vector{<:Real}: The flip probabilities according to QM simulation.
+- `zₐ::Real`: The distance from the beam to the null point.
+- `v::Real`: The velocity of the atomic beam.
+- `Bᵣ::Vector{<:Real}`: The remnant field.
+- `system_length::Real`: The length of the system.
+- `time_span::Tuple{<:Real, <:Real}`: The flight time range for the atoms.
 """
 struct Experiment
     name::String
-    currents::Vector{Float64}
-    flip_probabilities::Vector{Float64}
-    flip_probabilities_stds::Vector{Float64}
-    qm_flip_probabilities::Vector{Float64}
-    zₐ::Float64
-    v::Float64
-    Bᵣ::Vector{Float64}
-    system_length::Float64
-    time_span::Tuple{Float64, Float64}
-    function Experiment(name::String, currents::Vector{Float64}, flip_probabilities::Vector{Float64}, flip_probabilities_stds::Vector{Float64}, qm_flip_probabilities::Vector{Float64}, zₐ::Float64, v::Float64, Bᵣ::Vector{Float64}, system_length::Float64, time_span::Tuple{Float64, Float64})
+    currents::Vector{<:Real}
+    flip_probabilities::Vector{<:Real}
+    flip_probabilities_stds::Vector{<:Real}
+    qm_flip_probabilities::Vector{<:Real}
+    zₐ::Real
+    v::Real
+    Bᵣ::Vector{<:Real}
+    system_length::Real
+    time_span::Tuple{<:Real, <:Real}
+    function Experiment(name::String, currents::Vector{<:Real}, flip_probabilities::Vector{<:Real}, flip_probabilities_stds::Vector{<:Real}, qm_flip_probabilities::Vector{<:Real}, zₐ::Real, v::Real, Bᵣ::Vector{<:Real}, system_length::Real, time_span::Tuple{<:Real, <:Real})
         length(currents) == length(flip_probabilities) == length(flip_probabilities_stds) == length(qm_flip_probabilities) || throw(ArgumentError("The length of the current list and the flip probability list must be equal."))
         all(0 .<= flip_probabilities .<= 1) || throw(ArgumentError("Flip probability must be between 0 and 1."))
         all(isnan, flip_probabilities_stds) || all(x -> x >= 0, flip_probabilities_stds) || throw(ArgumentError("The standard deviations of the flip probabilities are invalid."))
-        # all(0 .<= qm_flip_probabilities .<= 1) || throw(ArgumentError("Flip probability must be between 0 and 1."))
+        all(0 .<= qm_flip_probabilities .<= 1) || throw(ArgumentError("Flip probability must be between 0 and 1."))
         zₐ > 0 || throw(ArgumentError("zₐ must be positive."))
         v > 0 || throw(ArgumentError("v must be positive."))
         system_length > 0 || throw(ArgumentError("The length of the system must be positive."))
@@ -124,68 +124,69 @@ A `Simulation` represents a particular simulation setup.
 
 # Fields
 - `type::String`: The type of simulation. Choose from `BE` and `WM`.
-- `atom_number::Int64`: The number of atoms.
+- `atom_number::Int`: The number of atoms.
 - `magnetic_field_computation_method::String`: The method used for calculating the magnetic field due to the wire. Choose from `"quadrupole"` and `"exact"`.
-- `initial_μₑ::Union{String, Float64}`: The initial condition for the electron magnetic moments. Choose from `"up"`, `"down"`, `1/2`, or `-1/2`.
-- `initial_μₙ::Union{String, Vector{Float64}}`: The sampling method for nuleus magnetic moments. Choose from `"HS"`, `"HS 2"`, `"HS 4"`, `"IHS"`, `"IHS 2"`, `"IHS 4"`, `"Iso"`, `"Iso 2"`, `"Iso 4"`, or give a vector of probability weights. The vector should be of length 2 or 4.
+- `initial_μₑ::Union{String, Real}`: The initial condition for the electron magnetic moments. Choose from `"up"`, `"down"`, `1/2`, or `-1/2`.
+- `initial_μₙ::Union{String, Vector{<:Real}}`: The sampling method for nuleus magnetic moments. Choose from `"HS"`, `"HS 2"`, `"HS 4"`, `"IHS"`, `"IHS 2"`, `"IHS 4"`, `"Iso"`, `"Iso 2"`, `"Iso 4"`, or give a vector of probability weights. The vector should be of length 2 or 4.
 - `solver::String`: The differential equation solver. Several good ones are `"radau"`, `"radau5"`, `"RadauIIA5"`, and `"TRBDF2"`.
 - `θₙ_is_fixed::Bool`: Whether `θₙ` is fixed or not.
 - `branching_condition::String`: Which branching condition to use. Choose from `"B₀ dominant"` and `"Bₑ dominant"`.
 - `BₙBₑ_strength::String`: The values for `Bₙ` and `Bₑ`. Choose from `"CQD"` and `"quantum"`.
-- `Bₙ_ratio::Real`: The ratio of the used Bₙ to the theory value.
-- `kᵢ::Float64`: The collapse coefficient.
-- `average_method::Union{String, Tuple{String, Float64}}`: The average method. Choose from `"ABC"` (average angles then branching condition), `"BCA"` (branching conditions averaged), and `"no average"`. If using `"ABC"` or `"BCA"`, the input should be a tuple of length 2, where the second entry is the fraction of total time to be averaged. For example, `average_method = ("ABC", 1/16)`.
-- `θ_cross_detection::Union{String, Tuple{String, Float64, Float64}, Tuple{String, Float64, String}}`: Whether angle cross is automatically detected. Choose from `"off"`, `"sign"`, and `"minabs"`. If using "sign" or "minabs", the input should be a tuple of length 3, where the second entry is the start time for detection, and the third entry is the period for detection. The period may be a fixed value or `"adaptive"`. For example, `θ_cross_detection = ("sign", 10e-6, 4.5e-6)`.
-- `sigmoid_field::Union{String, Tuple{Float64, Float64}}`: Whether use a sigmoid transition field. Give either `"off"` or a tuple of length 2, where the first entry is the magnetic field strength, and the second entry is the y coordinate of the SG apparatus. For example, `sigmoid_field = (0.1, 2e-2)`.
+- `BₙBₑ_ratio::Tuple{<:Real, <:Real}`: The ratio of the used Bₙ and Bₑ to the theory value.
+- `kᵢ::Real`: The collapse coefficient.
+- `average_method::Union{String, Tuple{String, <:Real}}`: The average method. Choose from `"ABC"` (average angles then branching condition), `"BCA"` (branching conditions averaged), and `"no average"`. If using `"ABC"` or `"BCA"`, the input should be a tuple of length 2, where the second entry is the fraction of total time to be averaged. For example, `average_method = ("ABC", 1/16)`.
+- `θ_cross_detection::Union{String, Tuple{String, <:Real, <:Real}, Tuple{String, <:Real, String}}`: Whether angle cross is automatically detected. Choose from `"off"`, `"sign"`, and `"minabs"`. If using "sign" or "minabs", the input should be a tuple of length 3, where the second entry is the start time for detection, and the third entry is the period for detection. The period may be a fixed value or `"adaptive"`. For example, `θ_cross_detection = ("sign", 10e-6, 4.5e-6)`.
+- `sigmoid_field::Union{String, Tuple{<:Real, <:Real}}`: Whether use a sigmoid transition field. Give either `"off"` or a tuple of length 2, where the first entry is the magnetic field strength, and the second entry is the y coordinate of the SG apparatus. For example, `sigmoid_field = (0.1, 2e-2)`.
 - `R2_comparison::String`: How to calculate R2. Choose from `"experiment"` and `"qm"`.
 """
 struct Simulation
     type::String
-    atom_number::Int64
+    atom_number::Int
     magnetic_field_computation_method::String
-    initial_μₑ::Union{String, Float64}
-    initial_μₙ::Union{String, Vector{Float64}}
+    initial_μₑ::Union{String, Real}
+    initial_μₙ::Union{String, Vector{<:Real}}
     solver::String
     θₙ_is_fixed::Bool
     branching_condition::String
     BₙBₑ_strength::String
-    Bₙ_ratio::Real
-    kᵢ::Float64
-    average_method::Union{String, Tuple{String, Float64}}
-    θ_cross_detection::Union{String, Tuple{String, Float64, Float64}, Tuple{String, Float64, String}}
-    sigmoid_field::Union{String, Tuple{Float64, Float64}}
+    BₙBₑ_ratio::Tuple{<:Real, <:Real}
+    kᵢ::Real
+    average_method::Union{String, Tuple{String, <:Real}}
+    θ_cross_detection::Union{String, Tuple{String, <:Real, <:Real}, Tuple{String, <:Real, String}}
+    sigmoid_field::Union{String, Tuple{<:Real, <:Real}}
     R2_comparison::String
     function Simulation(
         type::String,
-        atom_number::Int64,
+        atom_number::Int,
         magnetic_field_computation_method::String,
-        initial_μₑ::Union{String, Float64},
-        initial_μₙ::Union{String, Vector{Float64}},
+        initial_μₑ::Union{String, Real},
+        initial_μₙ::Union{String, Vector{<:Real}},
         solver::String,
         θₙ_is_fixed::Bool,
         branching_condition::String,
         BₙBₑ_strength::String,
-        Bₙ_ratio::Real,
-        kᵢ::Float64,
-        average_method::Union{String, Tuple{String, Float64}},
-        θ_cross_detection::Union{String, Tuple{String, Float64, Float64}, Tuple{String, Float64, String}},
-        sigmoid_field::Union{String, Tuple{Float64, Float64}},
+        BₙBₑ_ratio::Tuple{<:Real, <:Real},
+        kᵢ::Real,
+        average_method::Union{String, Tuple{String, <:Real}},
+        θ_cross_detection::Union{String, Tuple{String, <:Real, <:Real}, Tuple{String, <:Real, String}},
+        sigmoid_field::Union{String, Tuple{<:Real, <:Real}},
         R2_comparison::String
     )
         type ∈ ("BE", "WM") || throw(ArgumentError("The simulation type must be either BE or WM."))
         atom_number >= 1 || throw(ArgumentError("The number of atoms must be positive."))
         magnetic_field_computation_method ∈ ("quadrupole", "exact") || throw(ArgumentError("The magnetic field computation method must be either quadrupole or exact."))
         initial_μₑ ∈ ("up", "down", -1/2, 1/2) || throw(ArgumentError("The initial μₑ must be either up or down for BE type, or -1/2 or 1/2 for WM type."))
-        (initial_μₙ isa String && initial_μₙ ∈ ("HS", "HS 2", "HS 4", "IHS", "IHS 2", "IHS 4", "Iso", "Iso 2", "Iso 4") && (initial_μₙ ∉ ("HS", "IHS", "Iso") || type == "BE")) || (initial_μₙ isa Vector{Float64} && (length(initial_μₙ) == 2 || length(initial_μₙ) == 4) && sum(initial_μₙ) ≈ 1 && all(x -> 0 <= x <= 1, initial_μₙ)) || throw(ArgumentError("The initial μₙ is invalid. See help of `Simulation`."))
+        (initial_μₙ isa String && initial_μₙ ∈ ("HS", "HS 2", "HS 4", "IHS", "IHS 2", "IHS 4", "Iso", "Iso 2", "Iso 4") && (initial_μₙ ∉ ("HS", "IHS", "Iso") || type == "BE")) || (initial_μₙ isa Vector{<:Real} && (length(initial_μₙ) == 2 || length(initial_μₙ) == 4) && sum(initial_μₙ) ≈ 1 && all(x -> 0 <= x <= 1, initial_μₙ)) || throw(ArgumentError("The initial μₙ is invalid. See help of `Simulation`."))
         branching_condition ∈ ("B₀ dominant", "Bₑ dominant") || throw(ArgumentError("The branching condition must be either B₀ dominant or Bₑ dominant."))
         BₙBₑ_strength ∈ ("CQD", "quantum") || throw(ArgumentError("The BₙBₑ strength must be either CQD or quantum."))
-        Bₙ_ratio >= 0 || throw(ArgumentError("The Bₙ ratio must be positive."))
+        BₙBₑ_ratio[1] >= 0 || throw(ArgumentError("The Bₙ ratio must be nonnegative."))
+        BₙBₑ_ratio[2] >= 0 || throw(ArgumentError("The Bₑ ratio must be nonnegative."))
         kᵢ >= 0 || throw(ArgumentError("kᵢ must be nonnegative."))
-        (average_method isa String && average_method == "off") || (average_method isa Tuple{String, Float64} && average_method[1] ∈ ("ABC", "BCA") && 0 < average_method[2] < 1) || throw(ArgumentError("The average method is invalid. See help of `Simulation`."))
-        (θ_cross_detection isa String && θ_cross_detection == "off") || (θ_cross_detection isa Tuple && θ_cross_detection[1] ∈ ("sign", "minabs") && θ_cross_detection[2] > 0 && ((θ_cross_detection[3] isa Float64 && θ_cross_detection[3] > 0) || (θ_cross_detection[3] isa String && θ_cross_detection[3] == "adaptive"))) || throw(ArgumentError("The θ cross detection is invalid. See help of `Simulation`."))
-        (sigmoid_field isa String && sigmoid_field == "off") || (sigmoid_field isa Tuple{Float64, Float64} && sigmoid_field[2] >= 0) || throw(ArgumentError("The sigmoid field is invalid. See help of `Simulation`."))
+        (average_method isa String && average_method == "off") || (average_method isa Tuple{String, <:Real} && average_method[1] ∈ ("ABC", "BCA") && 0 < average_method[2] < 1) || throw(ArgumentError("The average method is invalid. See help of `Simulation`."))
+        (θ_cross_detection isa String && θ_cross_detection == "off") || (θ_cross_detection isa Tuple && θ_cross_detection[1] ∈ ("sign", "minabs") && θ_cross_detection[2] > 0 && ((θ_cross_detection[3] isa Real && θ_cross_detection[3] > 0) || (θ_cross_detection[3] isa String && θ_cross_detection[3] == "adaptive"))) || throw(ArgumentError("The θ cross detection is invalid. See help of `Simulation`."))
+        (sigmoid_field isa String && sigmoid_field == "off") || (sigmoid_field isa Tuple{<:Real, <:Real} && sigmoid_field[2] >= 0) || throw(ArgumentError("The sigmoid field is invalid. See help of `Simulation`."))
         R2_comparison ∈ ("experiment", "qm") || throw(ArgumentError("The R2 comparison must be either experiment or qm."))
-        if initial_μₙ isa Vector{Float64}
+        if initial_μₙ isa Vector{<:Real}
             @warn "The initial μₙ ia a vector. The consistency of the initial conditions needs manual check."
         end
         inconsistent_combinations = (Set([
@@ -202,7 +203,7 @@ struct Simulation
         if ((!θₙ_is_fixed || magnetic_field_computation_method == "exact") && (initial_μₑ, split(initial_μₙ, " ")) ∈ inconsistent_combinations[1]) || (θₙ_is_fixed && magnetic_field_computation_method == "quadrupole" && (initial_μₑ, split(initial_μₙ, " ")) ∈ inconsistent_combinations[2])
             @warn "The initial conditions are inconsistent with CQD postulates."
         end
-        new(type, atom_number, magnetic_field_computation_method, initial_μₑ, initial_μₙ, solver, θₙ_is_fixed, branching_condition, BₙBₑ_strength, Bₙ_ratio, kᵢ, average_method, θ_cross_detection, sigmoid_field, R2_comparison)
+        new(type, atom_number, magnetic_field_computation_method, initial_μₑ, initial_μₙ, solver, θₙ_is_fixed, branching_condition, BₙBₑ_strength, BₙBₑ_ratio, kᵢ, average_method, θ_cross_detection, sigmoid_field, R2_comparison)
     end
 end
 
@@ -212,8 +213,7 @@ end
 Sample one atom based on the simulation parameters.
 """
 function sample_atom_once(simulation::Simulation)
-    Bₙ, Bₑ = (simulation.BₙBₑ_strength == "CQD") ? (1.1884177310293015e-5, 0.05580626719338844) : (12.36e-3, 58.12)
-    Bₙ *= simulation.Bₙ_ratio
+    Bₙ, Bₑ = simulation.BₙBₑ_ratio .* ((simulation.BₙBₑ_strength == "CQD") ? (1.1884177310293015e-5, 0.05580626719338844) : (12.36e-3, 58.12))
     θₑ₀ = (simulation.initial_μₑ == "up" || simulation.initial_μₑ == -1/2) ? δθ / 2 : π - δθ / 2
     ϕₑ₀ = 0.0
     mᵢ = NaN
@@ -224,7 +224,7 @@ function sample_atom_once(simulation::Simulation)
     elseif simulation.initial_μₙ == "Iso"
         θₙ₀, ϕₙ₀ = 2asin(sqrt(rand())), 2π * rand()
     else
-        if simulation.initial_μₙ isa Vector{Float64}
+        if simulation.initial_μₙ isa Vector{<:Real}
             mᵢs = length(simulation.initial_μₙ) == 2 ? [-3/2, 3/2] : [-3/2, -1/2, 1/2, 3/2]
             weights = simulation.initial_μₙ
         else
@@ -260,7 +260,7 @@ function transform_vectors(vectors::Union{Vector{<:Vector{<:Real}}, Vector{<:Rea
 end
 
 """
-    get_external_magnetic_fields(t::Float64, current::Float64, experiment::Experiment, simulation::Simulation)
+    get_external_magnetic_fields(t::Real, current::Real, experiment::Experiment, simulation::Simulation)
 
 Calculate the external magnetic field components `Bx`, `By`, `Bz` at a given time `t` and return a tuple.
 
@@ -268,7 +268,7 @@ Calculate the external magnetic field components `Bx`, `By`, `Bz` at a given tim
 - +y is right, +z is up, +x is out of page.
 - Due to a different definition of the sign of current, the expressions have an extra minus sign.
 """
-function get_external_magnetic_fields(t::Float64, current::Float64, experiment::Experiment, simulation::Simulation)
+function get_external_magnetic_fields(t::Real, current::Real, experiment::Experiment, simulation::Simulation)
     y = t * experiment.v
     Bx = experiment.Bᵣ[1]
     if simulation.magnetic_field_computation_method == "quadrupole"
@@ -291,7 +291,7 @@ function get_external_magnetic_fields(t::Float64, current::Float64, experiment::
 end
 
 """
-    get_external_magnetic_fields(t::Float64, current::Float64, experiment::Experiment, magnetic_field_computation_method::String, sigmoid_field::Union{String, Tuple{Float64, Float64}})
+    get_external_magnetic_fields(t::Real, current::Real, experiment::Experiment, magnetic_field_computation_method::String, sigmoid_field::Union{String, Tuple{<:Real, <:Real}})
 
 Calculate the external magnetic field components `Bx`, `By`, `Bz` at a given time `t` and return a tuple.
 
@@ -299,7 +299,7 @@ Calculate the external magnetic field components `Bx`, `By`, `Bz` at a given tim
 - +y is right, +z is up, +x is out of page.
 - Due to a different definition of the sign of current, the expressions have an extra minus sign.
 """
-function get_external_magnetic_fields(t::Float64, current::Float64, experiment::Experiment, magnetic_field_computation_method::String, sigmoid_field::Union{String, Tuple{Float64, Float64}})
+function get_external_magnetic_fields(t::Real, current::Real, experiment::Experiment, magnetic_field_computation_method::String, sigmoid_field::Union{String, Tuple{<:Real, <:Real}})
     y = t * experiment.v
     Bx = experiment.Bᵣ[1]
     if magnetic_field_computation_method == "quadrupole"
@@ -322,11 +322,11 @@ function get_external_magnetic_fields(t::Float64, current::Float64, experiment::
 end
 
 """
-    get_external_magnetic_fields_at_ends(current::Float64, experiment::Experiment, simulation::Simulation)
+    get_external_magnetic_fields_at_ends(current::Real, experiment::Experiment, simulation::Simulation)
 
 Calculate the external magnetic field components at the two ends of the flipper.
 """
-function get_external_magnetic_fields_at_ends(current::Float64, experiment::Experiment, simulation::Simulation)
+function get_external_magnetic_fields_at_ends(current::Real, experiment::Experiment, simulation::Simulation)
     (t₁, t₂) = experiment.time_span
     return (get_external_magnetic_fields(t₁, current, experiment, simulation), get_external_magnetic_fields(t₂, current, experiment, simulation))
 end
@@ -394,11 +394,11 @@ function transform_angles(θ::Union{Real, Vector{<:Real}}, ϕ::Union{Real, Vecto
 end
 
 """
-    apply_branching(θₑs::Union{Real, Vector{<:Real}}, θₙs::Union{Real, Vector{<:Real}}, ϕₑs::Union{Real, Vector{<:Real}}, ϕₙs::Union{Real, Vector{<:Real}}, mᵢ::Float64, simulation::Simulation)
+    apply_branching(θₑs::Union{Real, Vector{<:Real}}, θₙs::Union{Real, Vector{<:Real}}, ϕₑs::Union{Real, Vector{<:Real}}, ϕₙs::Union{Real, Vector{<:Real}}, mᵢ::Real, simulation::Simulation)
 
 Apply the branching conditions.
 """
-function apply_branching(θₑs::Union{Real, Vector{<:Real}}, θₙs::Union{Real, Vector{<:Real}}, ϕₑs::Union{Real, Vector{<:Real}}, ϕₙs::Union{Real, Vector{<:Real}}, mᵢ::Float64, simulation::Simulation)
+function apply_branching(θₑs::Union{Real, Vector{<:Real}}, θₙs::Union{Real, Vector{<:Real}}, ϕₑs::Union{Real, Vector{<:Real}}, ϕₙs::Union{Real, Vector{<:Real}}, mᵢ::Real, simulation::Simulation)
     all(x -> 0 <= x <= π, θₑs) || throw(ArgumentError("θₑs must be between 0 and π."))
     all(x -> 0 <= x <= π, θₙs) || throw(ArgumentError("θₙs must be between 0 and π."))
     initial_μₑ_is_up = simulation.initial_μₑ == "up" || simulation.initial_μₑ == -1/2
@@ -414,7 +414,7 @@ function apply_branching(θₑs::Union{Real, Vector{<:Real}}, θₙs::Union{Real
             return initial_μₑ_is_up ? (θₑBs .> θₑₙs) : (θₑBs .< θₑₙs)
         end
     else
-        j, mᵢi, pool = (simulation.initial_μₙ ∈ ("HS 2", "IHS 2", "Iso 2") || (simulation.initial_μₙ isa Vector{Float64}) && length(simulation.initial_μₙ) == 2) ? (1/2, mᵢ / 3, [-3/2, 3/2]) : (3/2, mᵢ, [-3/2, -1/2, 1/2, 3/2])
+        j, mᵢi, pool = (simulation.initial_μₙ ∈ ("HS 2", "IHS 2", "Iso 2") || (simulation.initial_μₙ isa Vector{<:Real}) && length(simulation.initial_μₙ) == 2) ? (1/2, mᵢ / 3, [-3/2, 3/2]) : (3/2, mᵢ, [-3/2, -1/2, 1/2, 3/2])
         CCQ_weights = [[WignerD.wignerdjmn(j, mᵢi, k, θₙs[l])^2 for k ∈ -j:j] for l ∈ eachindex(θₙs)]
         mᵢfs = [sample(pool, ProbabilityWeights(CCQ_weights[l])) for l ∈ eachindex(CCQ_weights)]
         if length(mᵢfs) == 1
@@ -444,11 +444,11 @@ function apply_branching(θₑs::Union{Real, Vector{<:Real}}, θₙs::Union{Real
 end
 
 """
-    is_flipped(angles::Union{Vector{Float64}, Vector{Vector{Float64}}}, mᵢ::Float64, current::Float64, experiment::Experiment, simulation::Simulation)
+    is_flipped(angles::Union{Vector{<:Real}, Vector{<:Vector{<:Real}}}, mᵢ::Real, current::Real, experiment::Experiment, simulation::Simulation)
 
 Determine whether an atom has flipped based on its angles, magnetic field computation method, and the branching condition.
 """
-function is_flipped(angles::Union{Vector{Float64}, Vector{Vector{Float64}}}, mᵢ::Float64, current::Float64, experiment::Experiment, simulation::Simulation)
+function is_flipped(angles::Union{Vector{<:Real}, Vector{<:Vector{<:Real}}}, mᵢ::Real, current::Real, experiment::Experiment, simulation::Simulation)
     θₑfs, θₙfs, ϕₑfs, ϕₙfs = transform_vectors(angles)
     (B_start, B_end) = get_external_magnetic_fields_at_ends(current, experiment, simulation)
     B_unit_vectors_at_ends = collect.((B_start ./ norm(B_start), B_end ./ norm(B_end)))
@@ -604,9 +604,9 @@ A `Results` represents the results of the simulation.
 
 # Fields
 - `raw_data::BitArray`: The raw simulation data of whether the atoms flip.
-- `flip_probabilities::Vector{Float64}`: The flip probability calculated from the simulation.
-- `flip_probabilities_stds::Vector{Float64}`: The standard deviations of the calculated flip probabilities.
-- `R2::Float64`: The R sqaure value calculated from the simulation and experiment.
+- `flip_probabilities::Vector{<:Real}`: The flip probability calculated from the simulation.
+- `flip_probabilities_stds::Vector{<:Real}`: The standard deviations of the calculated flip probabilities.
+- `R2::Real`: The R sqaure value calculated from the simulation and experiment.
 - `θₑ_plot::Plots.Plot`: The plot of θₑ dynamics.
 - `θₙ_plot::Plots.Plot`: The plot of θₙ dynamics.
 - `θₑθₙ_plot::Plots.Plot`: The plot that combines the two θ plots.
@@ -614,14 +614,14 @@ A `Results` represents the results of the simulation.
 """
 struct Results
     raw_data::BitArray
-    flip_probabilities::Vector{Float64}
-    flip_probabilities_stds::Vector{Float64}
-    R2::Float64
+    flip_probabilities::Vector{<:Real}
+    flip_probabilities_stds::Vector{<:Real}
+    R2::Real
     θₑ_plot::Plots.Plot
     θₙ_plot::Plots.Plot
     θₑθₙ_plot::Plots.Plot
     flip_plot::Plots.Plot
-    function Results(raw_data::BitArray, flip_probabilities::Vector{Float64}, flip_probabilities_stds::Vector{Float64}, R2::Float64, θₑ_plot::Plots.Plot, θₙ_plot::Plots.Plot, θₑθₙ_plot::Plots.Plot, flip_plot::Plots.Plot)
+    function Results(raw_data::BitArray, flip_probabilities::Vector{<:Real}, flip_probabilities_stds::Vector{<:Real}, R2::Real, θₑ_plot::Plots.Plot, θₙ_plot::Plots.Plot, θₑθₙ_plot::Plots.Plot, flip_plot::Plots.Plot)
         all(isnan, flip_probabilities_stds) || all(x -> x >= 0, flip_probabilities_stds) || throw(ArgumentError("The standard deviations of the flip probabilities are invalid."))
         new(raw_data, flip_probabilities, flip_probabilities_stds, R2, θₑ_plot, θₙ_plot, θₑθₙ_plot, flip_plot)
     end
@@ -663,7 +663,7 @@ end
 Save the results of the whole simulation.
 """
 function save_results(experiment::Experiment, simulation::Simulation, results::Results, start_time, file_dir)
-    folder_dir = joinpath(file_dir, Dates.format(start_time, "yyyy-mm-dd_HH-MM-SS.sss"))
+    folder_dir = joinpath(file_dir, Dates.format(start_time, "yyyy-mm-dd_HH-MM-SS-sss"))
     isdir(folder_dir) || mkdir(folder_dir)
     df₁ = DataFrame(results.raw_data, :auto)
     CSV.write(joinpath(folder_dir, "Raw_Data.csv"), df₁)
@@ -673,7 +673,7 @@ function save_results(experiment::Experiment, simulation::Simulation, results::R
     savefig(results.θₙ_plot, joinpath(folder_dir, "θn_Plot.svg"))
     savefig(results.θₑθₙ_plot, joinpath(folder_dir, "θeθn_Plot.svg"))
     savefig(results.flip_plot, joinpath(folder_dir, "Flip_Plot.svg"))
-    cp(@__FILE__, joinpath(folder_dir, "BECQDBase.jl"))
+    cp(@__FILE__, joinpath(folder_dir, "CQDBase.jl"))
     end_time = now()
     metadata = OrderedDict(
         "Experiment" => experiment.name,
@@ -686,7 +686,7 @@ function save_results(experiment::Experiment, simulation::Simulation, results::R
         "θₙ" => simulation.θₙ_is_fixed ? "fixed" : "vary",
         "Branching Condition" => simulation.branching_condition,
         "Bₙ Bₑ Strength" => simulation.BₙBₑ_strength,
-        "Bₙ Ratio" => simulation.Bₙ_ratio,
+        "Bₙ Bₑ Ratio" => simulation.BₙBₑ_ratio,
         "kᵢ" => simulation.kᵢ,
         "Average Method" => simulation.average_method,
         "θ Cross Detection" => simulation.θ_cross_detection,
@@ -713,18 +713,18 @@ function save_results(experiment::Experiment, simulation::Simulation, results::R
         "Total Memory [GB]" => Sys.total_memory() / 1024^3,
         "Julia Version" => VERSION
     )
-    open(joinpath(folder_dir, "Info.json"), "w") do file
-        JSON3.pretty(file, JSON3.write(metadata))
-        println(file)
+    open(joinpath(folder_dir, "Info.json"), "w") do f
+        JSON3.pretty(f, JSON3.write(metadata))
+        println(f)
     end
     pkg_info = Pkg.dependencies()
     pkg_data = OrderedDict()
     for (uuid, info) in pkg_info
         pkg_data[info.name] = info.version
     end
-    open(joinpath(folder_dir, "Pkg_Info.json"), "w") do file
-        JSON3.pretty(file, JSON3.write(pkg_data))
-        println(file)
+    open(joinpath(folder_dir, "Pkg_Info.json"), "w") do f
+        JSON3.pretty(f, JSON3.write(pkg_data))
+        println(f)
     end
 end
 

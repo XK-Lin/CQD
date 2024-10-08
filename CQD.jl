@@ -16,7 +16,8 @@ simulation = Simulation(
     true, # θₙ is fixed
     "Bₑ dominant", # branching condition
     "CQD", # BₙBₑ strength
-    0.0, # kᵢ
+    (1, 1), # Bₙ Bₑ ratio
+    0, # kᵢ
     ("ABC", 1/16), # average method
     "off", # θ cross detection
     "off", # sigmoid field
@@ -25,5 +26,5 @@ simulation = Simulation(
 raw_data, θₑ_plot, θₙ_plot, θₑθₙ_plot = simulate(experiment, simulation)
 results = Results(experiment, simulation, raw_data, θₑ_plot, θₙ_plot, θₑθₙ_plot)
 save_results(experiment, simulation, results, start_time, file_dir)
-cp(@__FILE__, joinpath(file_dir, Dates.format(start_time, "yyyy-mm-dd_HH-MM-SS.sss"), "Code.jl"))
+cp(@__FILE__, joinpath(file_dir, Dates.format(start_time, "yyyy-mm-dd_HH-MM-SS-sss"), "Code.jl"))
 alert("Simulation finished!")
