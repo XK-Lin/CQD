@@ -22,7 +22,7 @@ for i ∈ eachindex(average_method_list)
         for k ∈ eachindex(θₙ_is_fixed_list)
             for l ∈ eachindex(initial_μₙ_list)
                 for m ∈ eachindex(sigmoid_field_list)
-                    for n ∈ eachindex(Bₙ_ratio_list)
+                    for n ∈ eachindex(BₙBₑ_ratio_list)
                         for o ∈ eachindex(kᵢ_list)
                             start_time = now()
                             simulation = Simulation(
